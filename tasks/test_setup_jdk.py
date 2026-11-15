@@ -90,12 +90,24 @@ class JdkTests(unittest.TestCase):
                 self.assertEqual(marker["version"], "21.0.13+9")
                 self.assertRegex(marker["sha256"], r"^[0-9a-f]{64}$")
         for alias, canonical in jdk.ARCH_ALIASES.items():
-            self.assertEqual(jdk.select_asset("linux", alias.upper()), jdk.select_asset("linux", canonical))
+            self.assertEqual(
+                jdk.select_asset("linux", alias.upper()),
+                jdk.select_asset("linux", canonical),
+            )
 
     def test_unsupported_targets_never_fall_back_or_create_directories(self):
-        for os_name, arch in (("windows", "arm64"), ("macos", "s390x"), ("linux", "mips")):
-            with self.subTest(os=os_name, arch=arch), patch.object(jdk.urllib.request, "urlopen") as request:
-                with self.assertRaisesRegex(ValueError, "Unsupported target.*Supported:.*windows/x86_64"):
+        for os_name, arch in (
+            ("windows", "arm64"),
+            ("macos", "s390x"),
+            ("linux", "mips"),
+        ):
+            with (
+                self.subTest(os=os_name, arch=arch),
+                patch.object(jdk.urllib.request, "urlopen") as request,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "Unsupported target.*Supported:.*windows/x86_64"
+                ):
                     jdk.install(self.root, os_name, arch)
                 request.assert_not_called()
                 self.assertFalse(self.home.parent.exists())
@@ -109,7 +121,11 @@ class JdkTests(unittest.TestCase):
 
     def test_linux_cache_cannot_satisfy_other_native_targets(self):
         self.make_home()
-        for os_name, arch in (("macos", "x86_64"), ("windows", "x86_64"), ("linux", "aarch64")):
+        for os_name, arch in (
+            ("macos", "x86_64"),
+            ("windows", "x86_64"),
+            ("linux", "aarch64"),
+        ):
             with self.subTest(os=os_name, arch=arch):
                 target = jdk.select_asset(os_name, arch)[1]
                 (self.home / jdk.MARKER).write_text(json.dumps(target))
@@ -119,8 +135,13 @@ class JdkTests(unittest.TestCase):
 
     def test_wrong_or_corrupt_marker_invalidates_otherwise_matching_home(self):
         target = self.make_home()
-        for content in ("not JSON", "[]", json.dumps({**target, "sha256": "wrong"}),
-                        json.dumps({**target, "os": "macos"}), json.dumps({**target, "arch": "aarch64"})):
+        for content in (
+            "not JSON",
+            "[]",
+            json.dumps({**target, "sha256": "wrong"}),
+            json.dumps({**target, "os": "macos"}),
+            json.dumps({**target, "arch": "aarch64"}),
+        ):
             with self.subTest(content=content):
                 (self.home / jdk.MARKER).write_text(content)
                 self.assertFalse(jdk.valid_cache(self.home, target))
@@ -130,9 +151,13 @@ class JdkTests(unittest.TestCase):
     def test_release_fields_are_checked_even_with_matching_marker(self):
         target = self.make_home()
         (self.home / jdk.MARKER).write_text(json.dumps(target))
-        for field, value in (("OS_NAME", "Darwin"), ("OS_ARCH", "aarch64"),
-                             ("JAVA_VERSION", "21.0.12"), ("JAVA_RUNTIME_VERSION", "21.0.13+8-LTS"),
-                             ("IMPLEMENTOR", "other vendor")):
+        for field, value in (
+            ("OS_NAME", "Darwin"),
+            ("OS_ARCH", "aarch64"),
+            ("JAVA_VERSION", "21.0.12"),
+            ("JAVA_RUNTIME_VERSION", "21.0.13+8-LTS"),
+            ("IMPLEMENTOR", "other vendor"),
+        ):
             with self.subTest(field=field):
                 (self.home / "release").write_text(release_text(**{field: value}))
                 self.assertFalse(jdk.valid_cache(self.home, target))
@@ -154,16 +179,26 @@ class JdkTests(unittest.TestCase):
                 root = self.root / str(index)
                 payload = archive_bytes(os_name, arch)
                 digest = hashlib.sha256(payload).hexdigest()
-                with patch.dict(jdk.SHA256, {(os_name, arch): digest}), \
-                        patch.object(jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)) as request:
+                with (
+                    patch.dict(jdk.SHA256, {(os_name, arch): digest}),
+                    patch.object(
+                        jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)
+                    ) as request,
+                ):
                     home = jdk.install(root, os_name, arch)
                     filename, target = jdk.select_asset(os_name, arch)
-                    request.assert_called_once_with(f"{jdk.BASE_URL}/{filename}", timeout=60)
-                    self.assertEqual(json.loads((home / jdk.MARKER).read_text()), target)
+                    request.assert_called_once_with(
+                        f"{jdk.BASE_URL}/{filename}", timeout=60
+                    )
+                    self.assertEqual(
+                        json.loads((home / jdk.MARKER).read_text()), target
+                    )
                     self.assertTrue(jdk.valid_cache(home, target))
                     self.assertFalse((home / "Contents").exists())
                     if os_name != "windows":
-                        self.assertTrue((home / "bin/java").stat().st_mode & stat.S_IXUSR)
+                        self.assertTrue(
+                            (home / "bin/java").stat().st_mode & stat.S_IXUSR
+                        )
                     request.reset_mock()
                     self.assertEqual(jdk.install(root, os_name, arch), home)
                     request.assert_not_called()
@@ -171,8 +206,12 @@ class JdkTests(unittest.TestCase):
 
     def test_checksum_failure_preserves_old_installation(self):
         self.make_old_install()
-        with patch.object(jdk.urllib.request, "urlopen", return_value=io.BytesIO(b"corrupted")), \
-                patch.object(jdk, "safe_extract") as extract:
+        with (
+            patch.object(
+                jdk.urllib.request, "urlopen", return_value=io.BytesIO(b"corrupted")
+            ),
+            patch.object(jdk, "safe_extract") as extract,
+        ):
             with self.assertRaisesRegex(ValueError, "SHA256 mismatch"):
                 jdk.install(self.root, "linux", "x86_64")
             extract.assert_not_called()
@@ -183,8 +222,12 @@ class JdkTests(unittest.TestCase):
         (self.home / "keep").write_text("old linux installation")
         payload = archive_bytes("macos", "aarch64")
         digest = hashlib.sha256(payload).hexdigest()
-        with patch.dict(jdk.SHA256, {("macos", "aarch64"): digest}), \
-                patch.object(jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)):
+        with (
+            patch.dict(jdk.SHA256, {("macos", "aarch64"): digest}),
+            patch.object(
+                jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)
+            ),
+        ):
             jdk.install(self.root, "macos", "arm64")
             target = jdk.select_asset("macos", "aarch64")[1]
             self.assertTrue(jdk.valid_cache(self.home, target))
@@ -194,9 +237,15 @@ class JdkTests(unittest.TestCase):
 
     def test_download_failure_preserves_old_installation(self):
         self.make_old_install()
-        with patch.object(jdk.urllib.request, "urlopen", side_effect=urllib.error.URLError("offline")):
-            with self.assertRaises(urllib.error.URLError):
-                jdk.install(self.root, "linux", "x86_64")
+        with (
+            patch.object(
+                jdk.urllib.request,
+                "urlopen",
+                side_effect=urllib.error.URLError("offline"),
+            ),
+            self.assertRaises(urllib.error.URLError),
+        ):
+            jdk.install(self.root, "linux", "x86_64")
         self.assert_old_preserved()
 
     def test_bad_archive_or_metadata_preserves_old_installation(self):
@@ -204,10 +253,14 @@ class JdkTests(unittest.TestCase):
         for payload in (b"not a tar archive", archive_bytes("linux", OS_NAME="Darwin")):
             with self.subTest(payload=payload[:20]):
                 digest = hashlib.sha256(payload).hexdigest()
-                with patch.dict(jdk.SHA256, {("linux", "x86_64"): digest}), \
-                        patch.object(jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)):
-                    with self.assertRaises((ValueError, tarfile.TarError)):
-                        jdk.install(self.root, "linux", "x86_64")
+                with (
+                    patch.dict(jdk.SHA256, {("linux", "x86_64"): digest}),
+                    patch.object(
+                        jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)
+                    ),
+                    self.assertRaises((ValueError, tarfile.TarError)),
+                ):
+                    jdk.install(self.root, "linux", "x86_64")
                 self.assert_old_preserved()
 
     def test_failed_replacement_rename_rolls_back(self):
@@ -220,11 +273,17 @@ class JdkTests(unittest.TestCase):
                 raise OSError("simulated replacement failure")
             return original_rename(path, destination)
 
-        with patch.dict(jdk.SHA256, {("linux", "x86_64"): hashlib.sha256(payload).hexdigest()}), \
-                patch.object(jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)), \
-                patch.object(Path, "rename", fail_candidate):
-            with self.assertRaisesRegex(OSError, "replacement failure"):
-                jdk.install(self.root, "linux", "x86_64")
+        with (
+            patch.dict(
+                jdk.SHA256, {("linux", "x86_64"): hashlib.sha256(payload).hexdigest()}
+            ),
+            patch.object(
+                jdk.urllib.request, "urlopen", return_value=io.BytesIO(payload)
+            ),
+            patch.object(Path, "rename", fail_candidate),
+            self.assertRaisesRegex(OSError, "replacement failure"),
+        ):
+            jdk.install(self.root, "linux", "x86_64")
         self.assert_old_preserved()
 
     def test_tar_and_zip_reject_traversal_and_foreign_absolute_paths(self):
@@ -272,7 +331,10 @@ class JdkTests(unittest.TestCase):
 
     def test_cli_defaults_to_container_root(self):
         output = io.StringIO()
-        with patch.object(jdk, "install") as install, contextlib.redirect_stdout(output):
+        with (
+            patch.object(jdk, "install") as install,
+            contextlib.redirect_stdout(output),
+        ):
             jdk.main(["--os", "windows", "--arch", "x86_64"])
         install.assert_called_once_with(Path("/repo"), "windows", "x86_64")
 
@@ -282,7 +344,10 @@ class JdkTests(unittest.TestCase):
         settings.parent.mkdir()
         settings.write_text('{"existing": true}')
         output = io.StringIO()
-        with contextlib.redirect_stdout(output), patch.object(jdk.urllib.request, "urlopen") as request:
+        with (
+            contextlib.redirect_stdout(output),
+            patch.object(jdk.urllib.request, "urlopen") as request,
+        ):
             jdk.main(["--os", "windows", "--arch", "x86_64", "--root", str(self.root)])
         request.assert_not_called()
         self.assertIn("Host JDK ready: .tools/jdk-21", output.getvalue())
