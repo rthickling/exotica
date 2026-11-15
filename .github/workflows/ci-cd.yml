@@ -66,6 +66,7 @@ jobs:
             app/build/reports/
             app/build/test-results/
             evidence/
+            evidence/ui/
             pricer/evidence/
           retention-days: 14
           if-no-files-found: warn
@@ -90,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [app, pricer]
+        service: [app, pricer, ui]
     steps:
       - name: Check out tested source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

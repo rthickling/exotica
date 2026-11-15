@@ -1,13 +1,27 @@
 # exotica
 Demonstration Exotic and Structured Product Sales and Management System
 
-A small Java 21/Spring application, PostgreSQL and an independent Python/QuantLib pricer. It covers two frozen synthetic contracts: a funded up-trigger autocallable note and a physical equity accumulator. Staff can request and compare indicative offers, record simulated authority, obtain a distinct firm offer, book once, value the contract and replay dated obligations.
+An Angular 21 sales workspace backed by a small Java 21/Spring application, PostgreSQL and an independent Python/QuantLib pricer. It covers two frozen synthetic contracts: a funded up-trigger autocallable note and a physical equity accumulator. Staff can request and compare indicative offers, record simulated authority, obtain a distinct firm offer, book once, value the contract and replay dated obligations.
 
 All clients, staff permissions, issuer offers, commercial matching, execution and settlement are **simulated**. The model calculation and the Java–Python HTTP and PostgreSQL boundaries are real. The system requires no institutional credentials. A committed outbox is retained; Kafka/Avro delivery, live connectivity and production identity/issuance/confirmation/custody systems are deferred.
 
-## Start and reproduce the journeys
+## Start the web UI
 
-The only installed requirements are **Docker with Compose v2+** and **`just` 1.56+**. Java, Gradle, PostgreSQL, Python and QuantLib all run in containers; no language runtimes or package managers are needed on the host. Use a Linux/macOS terminal, native Windows PowerShell, or WSL2. On Windows, Docker Desktop must be running Linux containers; Windows PowerShell 5.1 is sufficient, with no Git Bash or PowerShell 7 installation required. The first build needs public access to Docker Hub, Gradle distributions/Plugin Portal, Maven Central and PyPI. Later builds can reuse caches. The checked environment and retained results are in `evidence/verification.md`. The application and pricer listen only on localhost ports 8080 and 8090. PostgreSQL is private to the Compose network.
+Install **Docker with Compose v2+** and **`just` 1.56+**, then run from this directory:
+
+```sh
+just up
+```
+
+Open [the sales workspace](http://localhost:4200/workspace). Create an enquiry using `client-demo` and `staff-demo`, compare indicative offers, record a rationale and simulated instruction, obtain a firm offer, then explicitly confirm the simulated booking. The five pages cover enquiry, offers/booking, valuation, lifecycle and activity. You can create another enquiry or reopen an enquiry/trade by ID; this browser remembers the last IDs. See [UI details](ui/README.md) and the [clickable walkthrough and interview guide](docs/ui-interview-guide.md).
+
+The UI uses actual HTTP requests and persisted records. Pricing calls the real QuantLib-backed service; offers, authority and settlement are simulated. The UI supports initial-date valuation with numerical market inputs and sampling uncertainty, immutable fixing replay, due/settled progression and inspection of committed audit/outbox records. Outbox delivery is not implemented.
+
+Node 24 compiles the Angular application inside Docker; Nginx serves it on container port 80, published at localhost:4200, and proxies `/api/` and `/actuator/` to `app:8080`. No host Node, npm, Angular CLI or browser-test installation is required. PostgreSQL, app, pricer and UI are the four runtime services. The one-off tools/test services are opt-in.
+
+## Reproduce the API journeys
+
+The only installed requirements are **Docker with Compose v2+** and **`just` 1.56+**. Java, Gradle, PostgreSQL, Python, QuantLib, Node/npm, the Angular compiler and Playwright all run in containers; no language runtimes or package managers are needed on the host. Use a Linux/macOS terminal, native Windows PowerShell, or WSL2. On Windows, Docker Desktop must be running Linux containers; Windows PowerShell 5.1 is sufficient, with no Git Bash or PowerShell 7 installation required. The first build needs public access to Docker Hub, Gradle distributions/Plugin Portal, Maven Central, PyPI, npm and Microsoft Container Registry. Later builds can reuse caches. The checked environment and retained results are in `evidence/verification.md`. The UI, application and pricer listen only on localhost ports 4200, 8080 and 8090 respectively. PostgreSQL is private to the Compose network.
 
 From this directory:
 
@@ -29,11 +43,11 @@ just down
 
 `just down` preserves the synthetic database. For an intentionally empty start, `just reset` deletes **this Compose project's synthetic database**; then run the startup and journey commands again. Do not use that reset against data you want to retain. Development fault injection is enabled in this local Compose file for the rollback exercise and defaults off in the application itself.
 
-Run `just` to list tasks; `just compose <arguments>` forwards other Compose commands. The default is `docker compose`; set `DOCKER_COMPOSE_BIN` to the absolute path of a standalone Compose v2+ binary if needed. The `app` and `pricer` directories also have justfiles: run `just build`, `just test` or `just run` there. All component recipes use containers too. `just journeys` starts the stack automatically before running the request script inside the Compose network.
+Run `just` to list tasks; `just compose <arguments>` forwards other Compose commands. The default is `docker compose`; set `DOCKER_COMPOSE_BIN` to the absolute path of a standalone Compose v2+ binary if needed. The `app`, `pricer` and `ui` directories also have justfiles: run `just build`, `just test` or `just run` there. All component recipes use containers too. `just journeys` starts the stack automatically before running the request script inside the Compose network.
 
 ## Platform support
 
-The same commands work from Linux/macOS terminals and native Windows PowerShell. Run `just`, not an OS-specific entry point. Windows checkouts should use the committed `.gitattributes` rules: container scripts require LF line endings. The Gradle Wrapper is invoked through `sh` inside the JDK container, so Windows executable-bit handling does not affect it.
+The shared commands target Linux/macOS terminals, native Windows PowerShell and WSL2. Real execution evidence is from Linux; Windows argument forwarding was previously probed, which does not establish native Windows execution. Native macOS/Windows full-stack verification remains outstanding. UI browser tests run Chromium inside a Linux container, rather than native host browsers. Run `just`, not an OS-specific entry point. Windows checkouts should use the committed `.gitattributes` rules: container scripts require LF line endings. The Gradle Wrapper is invoked through `sh` inside the JDK container, so Windows executable-bit handling does not affect it.
 
 Shared workflows live in the root and component justfiles. `tasks/platform.just` imports `tasks/unix.just` and `tasks/windows.just`; platform attributes select the shell, user IDs and Compose adapter. Variadic recipes use script arguments instead of interpolating user input into shell commands. `tasks/windows.ps1` only launches native processes with preserved arguments and exit codes. It contains no build or test logic. New workflows should remain shared and use these adapters for argument forwarding.
 
@@ -69,8 +83,9 @@ Snapshot IDs describe the submitted fixture; the pricer computes a canonical has
 From the repository root:
 
 ```sh
-just build           # Build application and pricer images
-just test            # Run Python tests and all Java tests, including PostgreSQL
+just build           # Build application, pricer and UI images; compile/type-check Angular
+just test            # Run Python, Java/PostgreSQL and containerized UI browser tests
+just test-ui         # Start the stack and run Playwright Chromium tests inside Docker
 just journeys        # Run the actual Java–Python–PostgreSQL HTTP journeys
 ```
 
@@ -84,9 +99,11 @@ just build-app       # Produce app/build/libs/structured-products-lab-1.0.0.jar
 just test-db-down    # Remove the isolated test database when finished
 ```
 
-`just test-app` (also available as `just test-integration`) starts a separate PostgreSQL container, waits until healthy and runs all eight Java tests. Its database is private to the test Compose network, has no published port and never uses the application database. Five tests inspect real committed PostgreSQL rows, including competing acceptance transactions; the three HTTP adapter tests use a loopback stub. The journeys establish the actual Python boundary separately. Tests deliberately insert synthetic data; `just test-db-down` deletes that test project's database volume.
+`just test-app` (also available as `just test-integration`) starts a separate PostgreSQL container, waits until healthy and runs the complete Java suite (eight tests in the retained backend verification). Its database is private to the test Compose network, has no published port and never uses the application database. That retained suite has five tests inspecting real committed PostgreSQL rows, including competing acceptance transactions; its three HTTP adapter tests use a loopback stub. The journeys establish the actual Python boundary separately. Tests deliberately insert synthetic data; `just test-db-down` deletes that test project's database volume.
 
 The JDK container uses the checksum-pinned Gradle Wrapper and caches downloads in `.gradle/`. The JAR, JUnit XML and HTML reports appear under `app/build/`; reports are at `app/build/reports/tests/test/index.html`. Python evidence, journey traces and source checkpoints are also written into the checkout. On Linux/macOS (including WSL), container tooling uses the invoking user's ID so generated files stay editable. Native Windows uses Docker Desktop's bind-mount ownership mapping. Subsequent runs reuse Docker and Gradle caches.
+
+`just test-ui` uses Playwright 1.64.1 and its matching browser image against `http://ui` inside Compose. Its configured HTML report, JUnit XML and failure artifacts are under `evidence/ui/`; see [UI verification details](ui/README.md#verification). Browser test counts and pass status must come from the generated report for the current source, not the older backend evidence. The Angular production build has been confirmed with strict template checks (about 375 kB output / 97 kB estimated transfer). Browser execution remains pending; no UI browser pass is claimed here.
 
 `just down` stops the application project; `just test-db-down` stops the separate test project. `just reset` deletes only the application project's synthetic database. No host networking or host database is used.
 
@@ -94,12 +111,13 @@ The JDK container uses the checksum-pinned Gradle Wrapper and caches downloads i
 
 ## GitHub Actions
 
-[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on pull requests, pushes to `main`, `v*` tags and manual dispatch. CI runs `just ci`: all Python and Java/PostgreSQL tests, the real HTTP journeys, health checks, numerical checks and a source checkpoint. It uploads test reports, journey/numerical evidence and container logs for 14 days, even after a failure, then stops the containers. CI uses an Ubuntu runner; it does not establish native Windows/macOS execution.
+[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on pull requests, pushes to `main`, `v*` tags and manual dispatch. CI runs `just ci`: all Python, Java/PostgreSQL and Docker-hosted UI browser tests, the real HTTP journeys, health checks, numerical checks and a source checkpoint. It uploads test reports, journey/numerical evidence and container logs for 14 days, even after a failure, then stops the containers. CI uses an Ubuntu runner; it does not establish native Windows/macOS execution.
 
-After successful verification, pushes to `main` and `v*` tags publish both images to GitHub Container Registry:
+After successful verification, pushes to `main` and `v*` tags publish all three images to GitHub Container Registry:
 
 * `ghcr.io/rthickling/exotica-app`
 * `ghcr.io/rthickling/exotica-pricer`
+* `ghcr.io/rthickling/exotica-ui`
 
 Each image supports Linux AMD64 and ARM64. Tags include `sha-<full-commit-sha>`, `latest` for `main`, and the pushed version tag (for example `v1.0.0`). Use a matching commit tag or image digest for reproducible delivery. Pull requests and manual verification runs never publish images. ARM64 images are built, but the integration suite currently runs on AMD64.
 

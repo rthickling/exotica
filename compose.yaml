@@ -48,6 +48,20 @@ services:
       interval: 3s
       timeout: 3s
       retries: 40
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    ports:
+      - "127.0.0.1:4200:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
   # One-off tooling is opt-in, so `up` starts only the application stack.
   tools:
     profiles: [tools]
@@ -69,5 +83,25 @@ services:
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - .:/repo
+  ui-test:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+      target: test
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    command: ["npm", "run", "test:e2e"]
+    environment:
+      UI_BASE_URL: http://ui
+      HOME: /tmp
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      PLAYWRIGHT_HTML_OUTPUT_DIR: /repo/evidence/ui/playwright-report
+      PLAYWRIGHT_OUTPUT_DIR: /repo/evidence/ui
+    shm_size: 1gb
+    volumes:
+      - .:/repo
+    depends_on:
+      ui:
+        condition: service_healthy
 volumes:
   lab-data:

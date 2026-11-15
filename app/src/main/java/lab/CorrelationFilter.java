@@ -3,6 +3,7 @@ package lab;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.slf4j.*;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
@@ -19,7 +20,7 @@ public class CorrelationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
             throws ServletException, IOException {
         String candidate = request.getHeader("X-Correlation-ID");
         String id = candidate != null && candidate.matches("[A-Za-z0-9._:-]{1,100}") ? candidate

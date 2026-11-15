@@ -4,9 +4,9 @@ import 'tasks/platform.just'
 up:
     just compose up --build -d --wait
 
-# Build the application and pricer images.
+# Build the application, pricer and UI images (including Angular type checks).
 build:
-    just compose build app pricer
+    just compose build app pricer ui
 
 # Stop services while preserving the database.
 down:
@@ -28,7 +28,7 @@ logs *services:
     {{_forward}} compose logs --tail=100 {{_arguments}}
     {{_forward_status}}
 
-# Check both running HTTP services from inside the Compose network.
+# Check running HTTP services and the UI's application proxy inside Compose.
 health:
     just compose run --rm --no-deps tools scripts/health.py
 
@@ -74,8 +74,12 @@ test-db-down:
 # Alias for the complete Java suite, which always includes database tests.
 test-integration: test-app
 
-# Run all Python and Java tests. The isolated test database is kept for reuse.
-test: test-pricer test-app
+# Run browser tests against the healthy stack; retain user-owned reports.
+test-ui: up
+    just compose run --build --rm --no-deps ui-test
+
+# Run Python, Java and browser tests. The isolated test database is kept for reuse.
+test: test-pricer test-app test-ui
 
 # Run the same complete verification used by GitHub Actions.
 ci: test journeys health checks checkpoint

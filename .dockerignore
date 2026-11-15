@@ -9,3 +9,8 @@ pricer/evidence
 .agents
 .aws
 .codex
+**/node_modules
+ui/dist
+ui/.angular
+ui/playwright-report
+ui/test-results

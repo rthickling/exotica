@@ -1,0 +1,13 @@
+import '../tasks/platform.just'
+
+# Compile Angular and build its Nginx image without installing Node locally.
+build:
+    just --justfile ../justfile compose build ui
+
+# Start the healthy stack and run containerized browser tests.
+test:
+    just --justfile ../justfile test-ui
+
+# Build/start the UI and its backend services at http://localhost:4200.
+run:
+    just --justfile ../justfile up
