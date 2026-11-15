@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.NonNull;
+
 import jakarta.annotation.PreDestroy;
 import java.math.BigDecimal;
 import java.time.*;
@@ -108,7 +110,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> revise(UUID id, JsonNode contract) {
+    public Map<String, Object> revise(@NonNull UUID id, JsonNode contract) {
         Enquiry e = enquiry(id);
         requireUnbooked(e);
         if (!contract.path("product").asText().equals(e.product))
@@ -133,7 +135,7 @@ public class WorkflowService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getEnquiry(UUID id) {
+    public Map<String, Object> getEnquiry(@NonNull UUID id) {
         Enquiry e = enquiry(id);
         Map<String, Object> result = enquiryDto(e);
         result.put("offers", offers.findByEnquiryIdOrderByReceivedAtAsc(id).stream().map(this::offerDto).toList());
@@ -144,7 +146,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> rfq(UUID id, ApiController.RfqRequest request) {
+    public Map<String, Object> rfq(@NonNull UUID id, ApiController.RfqRequest request) {
         Enquiry e = enquiry(id);
         requireUnbooked(e);
         Map<String, String> scenarios = request.scenarios() == null ? Map.of() : request.scenarios();
@@ -182,8 +184,8 @@ public class WorkflowService {
                 } catch (ExecutionException ex) {
                     o = failedOffer(e, requestId, issuers.get(i), "ERROR", "Synthetic issuer failure");
                 }
-                offers.save(o);
-                result.add(o);
+                offers.save(Objects.requireNonNull(o));
+                result.add(Objects.requireNonNull(o));
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -196,7 +198,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> compare(UUID id) {
+    public Map<String, Object> compare(@NonNull UUID id) {
         Enquiry e = enquiry(id);
         Instant now = clock.instant();
         Map<String, Object> comparison = fields("basis",
@@ -214,7 +216,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> match(UUID id, String outcome) {
+    public Map<String, Object> match(@NonNull UUID id, String outcome) {
         Enquiry e = enquiry(id);
         requireUnbooked(e);
         if (!Set.of("IMPROVED", "MATCHED", "UNIMPROVED", "DECLINED").contains(outcome))
@@ -242,7 +244,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> select(UUID id, UUID offerId, String rationale) {
+    public Map<String, Object> select(@NonNull UUID id, @NonNull UUID offerId, String rationale) {
         Enquiry e = enquiry(id);
         requireUnbooked(e);
         Offer o = offer(offerId, id);
@@ -259,14 +261,15 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> instruct(UUID id, ApiController.InstructionRequest request) {
+    public Map<String, Object> instruct(@NonNull UUID id, ApiController.InstructionRequest request) {
         Enquiry e = enquiry(id);
         requireUnbooked(e);
         if (!request.authorised())
             throw new BusinessException(403, "AUTHORITY_REQUIRED", "Simulated authorised instruction is required");
-        if (e.selectedOfferId == null)
+        UUID selectedId = e.selectedOfferId;
+        if (selectedId == null)
             throw new BusinessException(409, "SELECTION_REQUIRED", "Select a comparable indicative offer first");
-        requireComparable(e, offer(e.selectedOfferId, id));
+        requireComparable(e, offer(selectedId, id));
         e.instructionJson = json.write(
                 fields("authorised", true, "reference", request.reference(), "offerId", e.selectedOfferId, "termsHash",
                         e.termsHash, "operatorId", e.operatorId, "recordedAt", clock.instant(), "simulated", true));
@@ -277,13 +280,14 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> firm(UUID id, String scenario) {
+    public Map<String, Object> firm(@NonNull UUID id, String scenario) {
         Enquiry e = enquiry(id);
         requireUnbooked(e);
-        if (e.instructionJson == null || e.selectedOfferId == null)
+        UUID selectedId = e.selectedOfferId;
+        if (e.instructionJson == null || selectedId == null)
             throw new BusinessException(409, "INSTRUCTION_REQUIRED",
                     "Record authorised instruction before requesting a firm offer");
-        Offer selected = offer(e.selectedOfferId, id);
+        Offer selected = offer(selectedId, id);
         requireComparable(e, selected);
         if (!Set.of("OK", "EXPIRED", "DECLINED", "STALE").contains(scenario))
             throw new BusinessException(400, "INVALID_FIRM_SCENARIO", "Choose OK,EXPIRED,DECLINED,STALE");
@@ -300,7 +304,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> accept(UUID id, ApiController.AcceptRequest request) {
+    public Map<String, Object> accept(@NonNull UUID id, ApiController.AcceptRequest request) {
         Optional<Trade> existing = trades.findByIdempotencyKey(request.idempotencyKey());
         if (existing.isPresent()) {
             Trade t = existing.get();
@@ -372,14 +376,14 @@ public class WorkflowService {
      * proxy boundary.
      */
     @Transactional(readOnly = true)
-    public Optional<Map<String, Object>> recoverAcceptance(UUID id, ApiController.AcceptRequest request) {
+    public Optional<Map<String, Object>> recoverAcceptance(@NonNull UUID id, ApiController.AcceptRequest request) {
         return trades.findByIdempotencyKey(request.idempotencyKey())
                 .filter(t -> t.enquiryId.equals(id) && t.offerId.equals(request.offerId()))
                 .map(t -> tradeDto(t, false));
     }
 
     @Transactional
-    public Map<String, Object> value(UUID id, JsonNode body) {
+    public Map<String, Object> value(@NonNull UUID id, JsonNode body) {
         if (!body.isObject())
             throw new BusinessException(400, "INVALID_REQUEST", "Valuation body must be an object");
         Enquiry e = enquiry(id);
@@ -398,7 +402,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> lifecycle(UUID tradeId, JsonNode fixings) {
+    public Map<String, Object> lifecycle(@NonNull UUID tradeId, JsonNode fixings) {
         Trade t = trade(tradeId);
         // Serialize concurrent replay for this trade using the enquiry's DB row lock.
         enquiries.findLocked(t.enquiryId).orElseThrow();
@@ -407,9 +411,7 @@ public class WorkflowService {
         Map<String, BigDecimal> combined = new TreeMap<>();
         for (LifecycleFixing prior : lifecycleFixings.findByTradeId(tradeId))
             combined.put(prior.observationDate.toString(), prior.spot);
-        var incoming = fixings.fields();
-        while (incoming.hasNext()) {
-            var entry = incoming.next();
+        for (var entry : fixings.properties()) {
             if (!entry.getValue().isNumber())
                 throw new BusinessException(400, "INVALID_FIXING", "Fixing must be numeric");
             BigDecimal spot = entry.getValue().decimalValue();
@@ -454,7 +456,7 @@ public class WorkflowService {
     }
 
     @Transactional
-    public Map<String, Object> advance(UUID tradeId, LocalDate asOf, boolean settle) {
+    public Map<String, Object> advance(@NonNull UUID tradeId, LocalDate asOf, boolean settle) {
         trade(tradeId);
         List<Obligation> list = obligations.findByTradeIdOrderByPaymentDateAsc(tradeId);
         for (Obligation o : list)
@@ -464,20 +466,20 @@ public class WorkflowService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getTrade(UUID id) {
+    public Map<String, Object> getTrade(@NonNull UUID id) {
         return tradeDto(trade(id), true);
     }
 
-    private Enquiry enquiry(UUID id) {
+    private Enquiry enquiry(@NonNull UUID id) {
         return enquiries.findById(id)
                 .orElseThrow(() -> new BusinessException(404, "ENQUIRY_NOT_FOUND", "Unknown enquiry"));
     }
 
-    private Trade trade(UUID id) {
+    private Trade trade(@NonNull UUID id) {
         return trades.findById(id).orElseThrow(() -> new BusinessException(404, "TRADE_NOT_FOUND", "Unknown trade"));
     }
 
-    private Offer offer(UUID id, UUID enquiryId) {
+    private Offer offer(@NonNull UUID id, @NonNull UUID enquiryId) {
         Offer o = offers.findById(id).orElseThrow(() -> new BusinessException(404, "OFFER_NOT_FOUND", "Unknown offer"));
         if (!o.enquiry.getId().equals(enquiryId))
             throw new BusinessException(409, "WRONG_ENQUIRY", "Offer belongs to another enquiry");

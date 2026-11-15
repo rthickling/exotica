@@ -3,6 +3,8 @@ package lab;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.*;
@@ -27,7 +29,7 @@ public class ApiController {
     public record MatchRequest(@NotBlank String outcome) {
     }
 
-    public record SelectionRequest(@NotNull UUID offerId, @NotBlank @Size(max = 2000) String rationale) {
+    public record SelectionRequest(@NotNull @NonNull UUID offerId, @NotBlank @Size(max = 2000) String rationale) {
     }
 
     public record InstructionRequest(boolean authorised, @NotBlank @Size(max = 200) String reference) {
@@ -36,7 +38,7 @@ public class ApiController {
     public record FirmRequest(@NotBlank String scenario) {
     }
 
-    public record AcceptRequest(@NotNull UUID offerId, @NotBlank @Size(max = 200) String idempotencyKey,
+    public record AcceptRequest(@NotNull @NonNull UUID offerId, @NotBlank @Size(max = 200) String idempotencyKey,
             boolean failAfterTrade, Long expectedVersion) {
     }
 
@@ -60,47 +62,47 @@ public class ApiController {
     }
 
     @GetMapping("/enquiries/{id}")
-    Object get(@PathVariable UUID id) {
+    Object get(@PathVariable @NonNull UUID id) {
         return workflow.getEnquiry(id);
     }
 
     @PostMapping("/enquiries/{id}/revision")
-    Object revision(@PathVariable UUID id, @Valid @RequestBody RevisionRequest request) {
+    Object revision(@PathVariable @NonNull UUID id, @Valid @RequestBody RevisionRequest request) {
         return workflow.revise(id, request.terms());
     }
 
     @PostMapping("/enquiries/{id}/rfq")
-    Object rfq(@PathVariable UUID id, @RequestBody RfqRequest request) {
+    Object rfq(@PathVariable @NonNull UUID id, @RequestBody RfqRequest request) {
         return workflow.rfq(id, request);
     }
 
     @GetMapping("/enquiries/{id}/comparison")
-    Object compare(@PathVariable UUID id) {
+    Object compare(@PathVariable @NonNull UUID id) {
         return workflow.compare(id);
     }
 
     @PostMapping("/enquiries/{id}/match")
-    Object match(@PathVariable UUID id, @Valid @RequestBody MatchRequest request) {
+    Object match(@PathVariable @NonNull UUID id, @Valid @RequestBody MatchRequest request) {
         return workflow.match(id, request.outcome());
     }
 
     @PostMapping("/enquiries/{id}/selection")
-    Object select(@PathVariable UUID id, @Valid @RequestBody SelectionRequest request) {
+    Object select(@PathVariable @NonNull UUID id, @Valid @RequestBody SelectionRequest request) {
         return workflow.select(id, request.offerId(), request.rationale());
     }
 
     @PostMapping("/enquiries/{id}/instruction")
-    Object instruction(@PathVariable UUID id, @Valid @RequestBody InstructionRequest request) {
+    Object instruction(@PathVariable @NonNull UUID id, @Valid @RequestBody InstructionRequest request) {
         return workflow.instruct(id, request);
     }
 
     @PostMapping("/enquiries/{id}/firm")
-    Object firm(@PathVariable UUID id, @Valid @RequestBody FirmRequest request) {
+    Object firm(@PathVariable @NonNull UUID id, @Valid @RequestBody FirmRequest request) {
         return workflow.firm(id, request.scenario());
     }
 
     @PostMapping("/enquiries/{id}/accept")
-    Object accept(@PathVariable UUID id, @Valid @RequestBody AcceptRequest request) {
+    Object accept(@PathVariable @NonNull UUID id, @Valid @RequestBody AcceptRequest request) {
         try {
             return workflow.accept(id, request);
         } catch (org.springframework.dao.DataIntegrityViolationException
@@ -114,22 +116,22 @@ public class ApiController {
     }
 
     @PostMapping("/enquiries/{id}/value")
-    Object value(@PathVariable UUID id, @RequestBody JsonNode request) {
+    Object value(@PathVariable @NonNull UUID id, @RequestBody JsonNode request) {
         return workflow.value(id, request);
     }
 
     @GetMapping("/trades/{id}")
-    Object trade(@PathVariable UUID id) {
+    Object trade(@PathVariable @NonNull UUID id) {
         return workflow.getTrade(id);
     }
 
     @PostMapping("/trades/{id}/lifecycle")
-    Object lifecycle(@PathVariable UUID id, @Valid @RequestBody LifecycleRequest request) {
+    Object lifecycle(@PathVariable @NonNull UUID id, @Valid @RequestBody LifecycleRequest request) {
         return workflow.lifecycle(id, request.fixings());
     }
 
     @PostMapping("/trades/{id}/obligations/advance")
-    Object advance(@PathVariable UUID id, @Valid @RequestBody AdvanceRequest request) {
+    Object advance(@PathVariable @NonNull UUID id, @Valid @RequestBody AdvanceRequest request) {
         return workflow.advance(id, request.asOf(), request.settle());
     }
 }

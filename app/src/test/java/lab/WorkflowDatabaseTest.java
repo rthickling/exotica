@@ -9,6 +9,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.NonNull;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
@@ -41,20 +42,23 @@ class WorkflowDatabaseTest {
     @MockitoBean
     PricingGateway pricing;
 
+    @NonNull
     UUID create(String product) {
-        return (UUID) workflow.create(new ApiController.CreateRequest(product, "client-demo", "staff-demo")).get("id");
+        return Objects.requireNonNull(
+                (UUID) workflow.create(new ApiController.CreateRequest(product, "client-demo", "staff-demo")).get("id"));
     }
 
     @SuppressWarnings("unchecked")
-    List<Map<String, Object>> rfq(UUID id, Map<String, String> modes) {
+    List<Map<String, Object>> rfq(@NonNull UUID id, Map<String, String> modes) {
         return (List<Map<String, Object>>) workflow.rfq(id, new ApiController.RfqRequest(modes, 100)).get("offers");
     }
 
-    UUID prepare(UUID id) {
-        UUID indicative = (UUID) rfq(id, Map.of()).getFirst().get("id");
+    @NonNull
+    UUID prepare(@NonNull UUID id) {
+        UUID indicative = Objects.requireNonNull((UUID) rfq(id, Map.of()).getFirst().get("id"));
         workflow.select(id, indicative, "Synthetic fixed-payoff comparison exercise");
         workflow.instruct(id, new ApiController.InstructionRequest(true, "synthetic-instruction"));
-        return (UUID) workflow.firm(id, "OK").get("id");
+        return Objects.requireNonNull((UUID) workflow.firm(id, "OK").get("id"));
     }
 
     @Test
@@ -62,7 +66,7 @@ class WorkflowDatabaseTest {
         assertEquals("FIXTURE_NOT_ELIGIBLE", assertThrows(BusinessException.class,
                 () -> workflow.create(new ApiController.CreateRequest("AUTOCALLABLE", "wrong", "staff-demo"))).code);
         UUID id = create("AUTOCALLABLE");
-        UUID offerId = (UUID) rfq(id, Map.of()).getFirst().get("id");
+        UUID offerId = Objects.requireNonNull((UUID) rfq(id, Map.of()).getFirst().get("id"));
         var error = assertThrows(BusinessException.class,
                 () -> workflow.accept(id, new ApiController.AcceptRequest(offerId, "indicative-" + id, false, null)));
         assertEquals("FIRM_REQUIRED", error.code);
@@ -78,11 +82,11 @@ class WorkflowDatabaseTest {
         List<Map<String, Object>> bad = rfq(other,
                 Map.of("Issuer-A", "EXPIRED", "Issuer-B", "STALE", "Issuer-C", "INCOMPARABLE"));
         assertEquals("EXPIRED", assertThrows(BusinessException.class,
-                () -> workflow.select(other, (UUID) bad.get(0).get("id"), "expired")).code);
+                () -> workflow.select(other, Objects.requireNonNull((UUID) bad.get(0).get("id")), "expired")).code);
         assertEquals("STALE_TERMS", assertThrows(BusinessException.class,
-                () -> workflow.select(other, (UUID) bad.get(1).get("id"), "stale")).code);
+                () -> workflow.select(other, Objects.requireNonNull((UUID) bad.get(1).get("id")), "stale")).code);
         assertEquals("NOT_COMPARABLE", assertThrows(BusinessException.class,
-                () -> workflow.select(other, (UUID) bad.get(2).get("id"), "currency changed")).code);
+                () -> workflow.select(other, Objects.requireNonNull((UUID) bad.get(2).get("id")), "currency changed")).code);
     }
 
     @Test
@@ -100,12 +104,12 @@ class WorkflowDatabaseTest {
         var first = workflow.accept(id, new ApiController.AcceptRequest(offerId, key, false, null));
         var repeated = workflow.accept(id, new ApiController.AcceptRequest(offerId, key, false, null));
         assertEquals(first.get("id"), repeated.get("id"));
-        UUID anotherFirm = (UUID) workflow.getEnquiry(id).get("selectedOfferId");
+        UUID anotherFirm = Objects.requireNonNull((UUID) workflow.getEnquiry(id).get("selectedOfferId"));
         assertEquals("IDEMPOTENCY_CONFLICT", assertThrows(BusinessException.class,
                 () -> workflow.accept(id, new ApiController.AcceptRequest(anotherFirm, key, false, null))).code);
         assertEquals(1, jdbc.queryForObject("select count(*) from trade where enquiry_id=?", Integer.class, id));
-        assertEquals(1,
-                jdbc.queryForObject("select count(*) from outbox where trade_id=?", Integer.class, first.get("id")));
+        assertEquals(1, jdbc.queryForObject("select count(*) from outbox where trade_id=?", Integer.class,
+                Objects.requireNonNull(first.get("id"))));
     }
 
     @Test
@@ -174,8 +178,8 @@ class WorkflowDatabaseTest {
     void repeatedLifecycleIsUniqueAndHistoricalChangeIsRejected() throws Exception {
         UUID id = create("ACCUMULATOR");
         UUID offerId = prepare(id);
-        UUID tradeId = (UUID) workflow.accept(id, new ApiController.AcceptRequest(offerId, "life-" + id, false, null))
-                .get("id");
+        UUID tradeId = Objects.requireNonNull(
+                (UUID) workflow.accept(id, new ApiController.AcceptRequest(offerId, "life-" + id, false, null)).get("id"));
         JsonNode result = mapper.readTree(
                 "{\"termsVersion\":\"acc-v1\",\"terminated\":false,\"processedObservations\":1,\"obligations\":[{\"eventKey\":\"acc-v1:2026-12-16:PURCHASE\",\"observationDate\":\"2026-12-16\",\"paymentDate\":\"2026-12-18\",\"kind\":\"PURCHASE\",\"cash\":-900,\"shares\":10,\"currency\":\"HKD\"}]}");
         when(pricing.call(eq("replay"), any())).thenReturn(result);
