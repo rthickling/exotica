@@ -1,0 +1,20 @@
+import '../tasks/platform.just'
+
+# Build the pricer image with its pinned Python and QuantLib dependencies.
+build:
+    just --justfile ../justfile compose build pricer
+
+# Compatibility alias: dependencies are installed in the image.
+setup: build
+
+# Run Python unit tests inside the pricer image.
+test:
+    just --justfile ../justfile test-pricer
+
+# Regenerate numerical evidence in this directory.
+checks:
+    just --justfile ../justfile checks
+
+# Build and start the pricer on localhost:8090.
+run:
+    just --justfile ../justfile compose up --build -d --wait pricer

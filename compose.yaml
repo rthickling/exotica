@@ -1,0 +1,73 @@
+name: structured-products-lab
+services:
+  db:
+    image: postgres:15@sha256:c961aa287d8698297cb26cdfadfbe9fd2cbaf77e53cfffe9636e8d8a1e4d842c
+    environment:
+      POSTGRES_DB: lab
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-local-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d lab"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - lab-data:/var/lib/postgresql/data
+      - ./scripts/inspect-db.sql:/inspect-db.sql:ro
+  pricer:
+    build: &pricer-build
+      context: .
+      dockerfile: pricer/Dockerfile
+    ports:
+      - "127.0.0.1:8090:8090"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/lab
+      DB_USER: lab
+      DB_PASSWORD: lab-local-only
+      PRICER_URL: http://pricer:8090
+      TERMS_DIRECTORY: /fixtures/terms
+      FAULT_INJECTION: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      pricer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  # One-off tooling is opt-in, so `up` starts only the application stack.
+  tools:
+    profiles: [tools]
+    image: python:3.12.12-slim@sha256:f3fa41d74a768c2fce8016b98c191ae8c1bacd8f1152870a3f9f87d350920b7c
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    working_dir: /repo
+    entrypoint: ["python"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - .:/repo
+  pricer-test:
+    profiles: [tools]
+    build: *pricer-build
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    working_dir: /repo/pricer
+    entrypoint: ["python"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - .:/repo
+volumes:
+  lab-data:

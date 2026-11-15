@@ -1,0 +1,16 @@
+{
+  "product": "AUTOCALLABLE",
+  "termsVersion": "note-v1",
+  "currency": "HKD",
+  "underlying": "SYNTH_EQ",
+  "initialReference": 100,
+  "startDate": "2026-11-16",
+  "observationDates": ["2027-02-16", "2027-05-17", "2027-08-16", "2027-11-16"],
+  "paymentDates": ["2027-02-18", "2027-05-19", "2027-08-18", "2027-11-18"],
+  "notional": 100000,
+  "couponRate": 0.08,
+  "couponBarrier": 70,
+  "autocallBarrier": 100,
+  "firstCallIndex": 1,
+  "capitalBarrier": 60
+}

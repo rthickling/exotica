@@ -1,0 +1,33 @@
+name: structured-products-test
+services:
+  db:
+    image: postgres:15@sha256:c961aa287d8698297cb26cdfadfbe9fd2cbaf77e53cfffe9636e8d8a1e4d842c
+    environment:
+      POSTGRES_DB: lab
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-local-only
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "lab", "-d", "lab"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - test-data:/var/lib/postgresql/data
+  gradle:
+    profiles: [tools]
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+      target: development
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    volumes:
+      - .:/repo
+    environment:
+      TEST_DB_URL: jdbc:postgresql://db:5432/lab
+      TEST_DB_USER: lab
+      TEST_DB_PASSWORD: lab-local-only
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  test-data:

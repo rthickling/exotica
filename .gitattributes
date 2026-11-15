@@ -1,0 +1,10 @@
+* text=auto
+*.just text eol=lf
+justfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.py text eol=lf
+*.ps1 text eol=lf
+/app/gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf

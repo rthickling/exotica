@@ -1,0 +1,21 @@
+import '../tasks/platform.just'
+
+# Package a JAR in build/libs using the containerized JDK.
+build:
+    just --justfile ../justfile build-app
+
+# Run all Java tests against the isolated containerized test database.
+test:
+    just --justfile ../justfile test-app
+
+# Build and start the application, PostgreSQL and pricer.
+run:
+    just --justfile ../justfile up
+
+# Pass tasks/options to the containerized Gradle Wrapper.
+[positional-arguments]
+[script]
+[extension('.ps1')]
+gradle *args:
+    {{_forward}} gradle {{_arguments}}
+    {{_forward_status}}

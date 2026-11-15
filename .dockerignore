@@ -1,0 +1,11 @@
+app/build
+**/.gradle
+**/.venv
+**/__pycache__
+evidence
+pricer/evidence
+.git
+.history
+.agents
+.aws
+.codex

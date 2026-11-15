@@ -1,0 +1,16 @@
+{
+  "product": "ACCUMULATOR",
+  "termsVersion": "acc-v1",
+  "currency": "HKD",
+  "underlying": "SYNTH_EQ",
+  "initialReference": 100,
+  "startDate": "2026-11-16",
+  "observationDates": ["2026-12-16", "2027-01-18", "2027-02-16", "2027-03-16"],
+  "paymentDates": ["2026-12-18", "2027-01-20", "2027-02-18", "2027-03-18"],
+  "strike": 90,
+  "baseQuantity": 10,
+  "multiplier": 2,
+  "knockoutBarrier": 110,
+  "guaranteedObservations": 0,
+  "knockoutAccrues": false
+}

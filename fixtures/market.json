@@ -1,0 +1,8 @@
+{
+  "snapshotId": "synthetic-hkd-20261116-v1",
+  "asOf": "2026-11-16",
+  "spot": 100,
+  "rate": 0.03,
+  "dividend": 0.01,
+  "volatility": 0.25
+}
