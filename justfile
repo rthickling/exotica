@@ -77,6 +77,9 @@ test-integration: test-app
 # Run all Python and Java tests. The isolated test database is kept for reuse.
 test: test-pricer test-app
 
+# Run the same complete verification used by GitHub Actions.
+ci: test journeys health checks checkpoint
+
 # Record the current source hashes in evidence/checkpoint.json.
 checkpoint:
     just compose run --rm --no-deps tools scripts/checkpoint.py
