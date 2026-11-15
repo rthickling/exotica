@@ -14,6 +14,8 @@ Open [localhost:4200](http://localhost:4200/workspace). No host Node, npm or Ang
 
 The Docker build uses Node 24, `npm ci`, the committed lockfile and Angular's production compiler. The final image is Nginx, listening on port 80 and mapped to host localhost:4200. `/api/` and `/actuator/` proxy to `app:8080`, so browser requests remain on the same origin. Other application routes fall back to `index.html`, allowing route refreshes. Static market and lifecycle fixtures are copied from the repository during the build. Node is a build dependency, not a runtime server. The component `ui/justfile` also provides `just build`, `just test` and `just run` from `ui/`, forwarding to the shared root workflows.
 
+For optional host `ng serve` and editor breakpoints, follow [IDE debugging](../docs/debugging.md). Angular serves the shared root JSON fixtures in development and production; no manual copies into `ui/public` are needed.
+
 ## Pages and workflow
 
 * [Enquiry workspace](http://localhost:4200/workspace): create an autocallable note or accumulator using `client-demo` / `staff-demo`; inspect frozen terms; reopen an enquiry or trade using its saved UUID. **New enquiry** clears the current workspace without deleting server records.

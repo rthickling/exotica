@@ -53,6 +53,8 @@ Shared workflows live in the root and component justfiles. `tasks/platform.just`
 
 ## Inspect and change the system
 
+For optional Cursor/VS Code breakpoints, see [IDE debugging](docs/debugging.md). The host debug configuration needs local Node/Python and editor extensions; the normal Docker build, use and test commands above need only Docker and `just`. Debug helpers live under `tasks/debug*.just`, and cleanup preserves the debug database and host processes.
+
 `app/README.md` documents exact endpoints and DTOs. Begin with `GET /api/templates`, then `POST /api/enquiries`; `scripts/journeys.py` provides complete executable requests and the retained HTTP trace provides concrete IDs and responses. Use a new `termsVersion` for a change to contractual terms. Revision preserves the earlier terms and invalidates the enquiry's old offers/authority/selection. Historical fixings already accepted for a trade cannot change.
 
 Main source paths:
@@ -94,6 +96,7 @@ For focused work:
 ```sh
 just test-pricer
 just test-app
+just test-debug      # Check the optional native JDK installer inside Docker
 just checks          # Regenerate pricer/evidence numerical results
 just build-app       # Produce app/build/libs/structured-products-lab-1.0.0.jar
 just test-db-down    # Remove the isolated test database when finished
@@ -111,7 +114,7 @@ The JDK container uses the checksum-pinned Gradle Wrapper and caches downloads i
 
 ## GitHub Actions
 
-[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on pull requests, pushes to `main`, `v*` tags and manual dispatch. CI runs `just ci`: all Python, Java/PostgreSQL and Docker-hosted UI browser tests, the real HTTP journeys, health checks, numerical checks and a source checkpoint. It uploads test reports, journey/numerical evidence and container logs for 14 days, even after a failure, then stops the containers. CI uses an Ubuntu runner; it does not establish native Windows/macOS execution.
+[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) runs on pull requests, pushes to `main`, `v*` tags and manual dispatch. CI runs `just ci`: debug setup tests, all Python, Java/PostgreSQL and Docker-hosted UI browser tests, the real HTTP journeys, health checks, numerical checks and a source checkpoint. It uploads test reports, journey/numerical evidence and container logs for 14 days, even after a failure, then stops the containers. CI uses an Ubuntu runner; it does not establish native Windows/macOS execution.
 
 After successful verification, pushes to `main` and `v*` tags publish all three images to GitHub Container Registry:
 

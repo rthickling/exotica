@@ -2,19 +2,38 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "debug-deps",
+      "type": "process",
+      "command": "just",
+      "args": [
+        "debug-deps"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "ng serve",
       "type": "shell",
-      "command": "npx ng serve",
+      "command": "npx",
+      "args": ["ng", "serve"],
+      "windows": {
+        "command": "npx.cmd"
+      },
       "options": {
         "cwd": "${workspaceFolder}/ui",
         "env": {
-          "NG_CLI_ANALYTICS": "false"
+          "NG_CLI_ANALYTICS": "false",
+          "NO_COLOR": "1"
         }
       },
       "isBackground": true,
       "problemMatcher": {
         "owner": "angular",
-        "pattern": { "regexp": "^$" },
+        "pattern": {
+          "regexp": "^$"
+        },
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".",
@@ -24,6 +43,9 @@
       "presentation": {
         "reveal": "silent",
         "panel": "dedicated"
+      },
+      "runOptions": {
+        "instanceLimit": 1
       }
     }
   ]

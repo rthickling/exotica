@@ -20,6 +20,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "../fixtures/*.json",
+                "input": ".",
+                "output": "fixtures"
               }
             ],
             "styles": [

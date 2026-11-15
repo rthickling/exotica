@@ -15,6 +15,10 @@
         "PRICER_URL": "http://localhost:8090",
         "TERMS_DIRECTORY": "${workspaceFolder}/fixtures/terms",
         "FAULT_INJECTION": "true"
+      },
+      "javaExec": "${workspaceFolder}/.tools/jdk-21/bin/java",
+      "windows": {
+        "javaExec": "${workspaceFolder}/.tools/jdk-21/bin/java.exe"
       }
     },
     {
@@ -28,7 +32,10 @@
         "PRICER_BIND": "127.0.0.1",
         "PRICER_PORT": "8090"
       },
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "windows": {
+        "python": "${workspaceFolder}/pricer/.venv/Scripts/python.exe"
+      }
     },
     {
       "name": "UI",
@@ -42,12 +49,17 @@
   "compounds": [
     {
       "name": "Debug stack",
-      "configurations": ["Pricer", "LabApplication", "UI"],
+      "configurations": [
+        "Pricer",
+        "LabApplication",
+        "UI"
+      ],
       "stopAll": true,
       "presentation": {
         "order": 1,
         "group": "debug"
-      }
+      },
+      "preLaunchTask": "debug-deps"
     }
   ]
 }
