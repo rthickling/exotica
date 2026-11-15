@@ -39,3 +39,5 @@ ui/test-results/
 
 !app/gradle/wrapper/gradle-wrapper.jar
 .history/
+.vscode/launch.json
+.vscode/settings.json
