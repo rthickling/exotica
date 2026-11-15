@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "LabApplication",
+      "request": "launch",
+      "mainClass": "lab.LabApplication",
+      "projectName": "app",
+      "cwd": "${workspaceFolder}/app",
+      "env": {
+        "DB_URL": "jdbc:postgresql://localhost:55432/lab",
+        "DB_USER": "lab",
+        "DB_PASSWORD": "lab-local-only",
+        "PRICER_URL": "http://localhost:8090",
+        "TERMS_DIRECTORY": "${workspaceFolder}/fixtures/terms",
+        "FAULT_INJECTION": "true"
+      }
+    },
+    {
+      "name": "Pricer",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/pricer/server.py",
+      "cwd": "${workspaceFolder}/pricer",
+      "python": "${workspaceFolder}/pricer/.venv/bin/python",
+      "env": {
+        "PRICER_BIND": "127.0.0.1",
+        "PRICER_PORT": "8090"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "UI",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:4200/workspace",
+      "webRoot": "${workspaceFolder}/ui",
+      "preLaunchTask": "ng serve"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug stack",
+      "configurations": ["Pricer", "LabApplication", "UI"],
+      "stopAll": true,
+      "presentation": {
+        "order": 1,
+        "group": "debug"
+      }
+    }
+  ]
+}

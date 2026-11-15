@@ -6,14 +6,14 @@ The HTTP server runs one request at a time because QL evaluationDate is global.
 
 from __future__ import annotations
 
-from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
 import hashlib
 import json
 import math
-from pathlib import Path
 import platform
 import statistics
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
 from typing import Any
 
 import QuantLib as ql

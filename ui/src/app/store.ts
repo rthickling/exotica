@@ -157,10 +157,10 @@ export class Workspace {
         ? { "Issuer-B": "TIMEOUT" }
         : mode === "invalid"
           ? {
-              "Issuer-A": "EXPIRED",
-              "Issuer-B": "STALE",
-              "Issuer-C": "INCOMPARABLE",
-            }
+            "Issuer-A": "EXPIRED",
+            "Issuer-B": "STALE",
+            "Issuer-C": "INCOMPARABLE",
+          }
           : {};
     return this.mutate("Requesting indicative offers", () =>
       this.api.quotes(this.enquiry()!.id, scenarios),
