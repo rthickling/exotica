@@ -13,7 +13,7 @@ Install **Docker with Compose v2+** and **`just` 1.56+**, then run from this dir
 just up
 ```
 
-Open [the sales workspace](http://localhost:4200/workspace). Create an enquiry using `client-demo` and `staff-demo`, compare indicative offers, record a rationale and simulated instruction, obtain a firm offer, then explicitly confirm the simulated booking. The five pages cover enquiry, offers/booking, valuation, lifecycle and activity. You can create another enquiry or reopen an enquiry/trade by ID; this browser remembers the last IDs. See [UI details](ui/README.md) and the [clickable walkthrough and interview guide](docs/ui-interview-guide.md).
+Open [the sales workspace](http://localhost:4200/workspace). Create an enquiry using `client-demo` and `staff-demo`, compare indicative offers, record a rationale and simulated instruction, obtain a firm offer, then explicitly confirm the simulated booking. The five pages cover enquiry, offers/booking, valuation, lifecycle and activity. You can create another enquiry or reopen an enquiry/trade by ID; this browser remembers the last IDs. See [UI details](ui/README.md) and the [UI user guide](docs/ui-guide.md).
 
 The UI uses actual HTTP requests and persisted records. Pricing calls the real QuantLib-backed service; offers, authority and settlement are simulated. The UI supports initial-date valuation with numerical market inputs and sampling uncertainty, immutable fixing replay, due/settled progression and inspection of committed audit/outbox records. Outbox delivery is not implemented.
 

@@ -51,4 +51,4 @@ just ci
 
 Angular 21, TypeScript 5.9, RxJS 7.8 and Node 24 are consistent with the [official Angular compatibility table](https://angular.dev/reference/versions). Exact dependency patches and container digests are recorded in the package lockfile and Dockerfile.
 
-For a reproducible demonstration and discussion prompts, use the [interview guide](../docs/ui-interview-guide.md). No live offers, real authentication, production authorization, payment settlement or event publisher is provided.
+For a reproducible product walkthrough, use the [UI user guide](../docs/ui-guide.md). No live offers, real authentication, production authorization, payment settlement or event publisher is provided.
