@@ -7,7 +7,7 @@ All clients, staff permissions, issuer offers, commercial matching, execution an
 
 ## Start the web UI
 
-Install **Docker with Compose v2+** and **`just` 1.56+**, then run from this directory:
+Install **[Docker with Compose v2+](https://docs.docker.com/get-started/get-docker/)** and **[just 1.56+](https://just.systems/man/en/packages.html)**, then run from this directory:
 
 ```sh
 just up
