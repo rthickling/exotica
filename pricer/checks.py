@@ -10,10 +10,11 @@ import copy
 import json
 import math
 import os
-from pathlib import Path
 import platform
 import subprocess
 import sys
+from pathlib import Path
+
 from engine import mean_stderr, path_generator, replay, value
 from test_engine import request
 
