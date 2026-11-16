@@ -35,6 +35,8 @@ class Enquiry {
     String termsVersion;
     String state;
     String clientId;
+    @Column(length = 100)
+    String clientReference;
     String operatorId;
     String eligibility;
     @Column(columnDefinition = "text")

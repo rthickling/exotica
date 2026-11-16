@@ -9,7 +9,7 @@ Requirements: Docker with Compose v2+ and `just` 1.56+. Linux, macOS and native 
 From this `app` directory:
 
 ```sh
-just test       # All 8 tests, including 5 real PostgreSQL tests
+just test       # All 10 tests, including 7 real PostgreSQL tests
 just build      # Write build/libs/structured-products-lab-1.0.0.jar
 just run        # Build/start the application, PostgreSQL and Python pricer
 ```
@@ -24,7 +24,7 @@ Health: `GET /actuator/health`. Requests accept and return `X-Correlation-ID`; m
 
 Every endpoint below starts with `/api`. IDs are UUIDs. Required fields have Java Bean Validation constraints. JSON errors contain `error`, `message`, `correlationId`. Business conflicts use 409, invalid requests 400, unknown fixtures 403, and missing resources 404. The pricer adapter maps actual HTTP timeout to 504 and remote HTTP errors/unavailability to 502.
 
-1. `GET /templates` returns the complete versioned contracts. `POST /enquiries` accepts `{"product":"AUTOCALLABLE","clientId":"client-demo","operatorId":"staff-demo"}`; `ACCUMULATOR` is the other product. The returned enquiry includes `id`, `version`, full `terms`, `termsHash`, and explicit fixture eligibility. The frozen template fixes trade size; a changed size is an explicit new term version.
+1. `GET /templates` returns the complete versioned contracts. `POST /enquiries` accepts `{"product":"AUTOCALLABLE","clientId":"client-demo","operatorId":"staff-demo","clientReference":"ORDER-1042"}`; `ACCUMULATOR` is the other product. `clientReference` is optional: omission or `null` is accepted, and strings may contain up to 100 characters. Longer values return HTTP 400. The reference is persisted with the enquiry and included as `clientReference` in creation and subsequent enquiry responses; enquiries without a reference return `null`. Existing enquiries remain valid after the database migration. The returned enquiry also includes `id`, `version`, full `terms`, `termsHash`, and explicit fixture eligibility. The frozen template fixes trade size; a changed size is an explicit new term version.
 2. `POST /enquiries/{id}/rfq` accepts `{"scenarios":{"Issuer-B":"TIMEOUT"},"deadlineMillis":200}`. All three issuers fan out through one fixed three-thread pool. Per-dispatch deadlines are bounded 10–1000 ms. Modes are `OK`, `TIMEOUT`, `ERROR`, `EXPIRED`, `STALE`, `INCOMPARABLE`, `DECLINED`, `UNSUPPORTED`. Result: `{requestId,enquiryId,deadlineMillis,offers:[...],simulated:true}`. Each persisted offer includes full terms/hash, issuer, time/expiry, size, price, fee and convention. A timeout or exception is an explicit failed offer, rather than a fabricated price.
 3. `GET /enquiries/{id}/comparison` returns `{basis,offers:[{offer,comparability,netUpfrontCost}],interpretation}` and persists the snapshot in an `OffersCompared` audit event. The note comparison uses fixed payoff terms and issue price percent plus an HKD fee. Accumulators use fixed strike/quantity/schedule and an HKD upfront fee. A lower upfront cost alone does not establish suitability. Invalid offers have a null comparable cost. Issuer credit information remains separate synthetic information.
 4. `POST /enquiries/{id}/match` accepts `{"outcome":"UNIMPROVED"}`; alternatives are `IMPROVED`, `MATCHED`, `DECLINED`. This returns `{outcome,offer}` for an explicitly simulated Barclays response to the cheapest currently comparable external offer. It does not mandate selection or represent actual Barclays economics.

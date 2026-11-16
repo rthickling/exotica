@@ -10,7 +10,13 @@
     "target": "ES2022",
     "module": "preserve",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "dom"]
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "types": [
+      "node"
+    ]
   },
   "angularCompilerOptions": {
     "strictInjectionParameters": true,

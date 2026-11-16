@@ -59,6 +59,7 @@ export interface Enquiry {
   terms: Terms;
   termsVersion: string;
   clientId: string;
+  clientReference: string | null;
   operatorId: string;
   selectedOfferId: string | null;
   selectionRationale: string | null;

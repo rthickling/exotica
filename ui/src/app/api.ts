@@ -45,8 +45,8 @@ export class Api {
     firstValueFrom(
       this.http.get<Comparison>(`/api/enquiries/${id}/comparison`),
     );
-  create = (product: Product, clientId: string, operatorId: string) =>
-    this.post<Enquiry>("/enquiries", { product, clientId, operatorId });
+  create = (product: Product, clientId: string, operatorId: string, clientReference: string | null) =>
+    this.post<Enquiry>("/enquiries", { product, clientId, operatorId, clientReference });
   quotes = (id: string, scenarios: Record<string, string>) =>
     this.post(`/enquiries/${id}/rfq`, { scenarios, deadlineMillis: 200 });
   match = (id: string, outcome: string) =>

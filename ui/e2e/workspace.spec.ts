@@ -5,8 +5,11 @@ const output = process.env["PLAYWRIGHT_OUTPUT_DIR"] ?? "/repo/evidence/ui";
 const nav = (page: Page, name: RegExp) =>
   page.getByRole("navigation").getByRole("link", { name });
 
-async function create(page: Page, product = "Autocallable note") {
+async function create(page: Page, product = "Autocallable note", clientReference = "") {
   await page.goto("/workspace");
+  await page
+    .getByLabel("Client Reference (Optional)", { exact: true })
+    .fill(clientReference);
   await expect(
     page.getByRole("button", { name: /Create enquiry/ }),
   ).toBeEnabled();
@@ -392,4 +395,60 @@ test("a failed comparison load leaves the previous record intact", async ({
       () => JSON.parse(localStorage.getItem("exotica.session.v1")!).enquiryId,
     ),
   ).toBe(previous);
+});
+
+test("client reference survives reload and reopening an enquiry", async ({
+  page
+}) => {
+  await create(page, "Autocallable note", "ORDER-1042");
+  await nav(page, /Enquiry workspace/).click();
+  const id = await page.getByTestId("enquiry-id").innerText();
+  await expect(page.getByText("ORDER-1042", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("ORDER-1042", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /New enquiry/ }).click();
+  await page.getByLabel("Saved record ID", { exact: true }).fill(id);
+  await page.getByRole("button", { name: "Open enquiry", exact: true }).click();
+  await expect(page.getByText("ORDER-1042", { exact: true })).toBeVisible();
+});
+
+test("client reference can be left blank", async ({
+  page
+}) => {
+  await create(page);
+  await nav(page, /Enquiry workspace/).click();
+  await expect(page.getByText("Not provided", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Not provided", { exact: true })).toBeVisible();
+});
+
+test("client reference accepts up to 100 characters", async ({
+  request
+}) => {
+  const reference = "X".repeat(100);
+  const response = await request.post("/api/enquiries", {
+    data: {
+      product: "AUTOCALLABLE",
+      clientId: "client-demo",
+      operatorId: "staff-demo",
+      clientReference: reference,
+    },
+  });
+  expect(response.status()).toBe(200);
+  expect((await response.json()).clientReference).toBe(reference);
+});
+
+test("client reference does not accept more than 100 characters", async ({
+  request
+}) => {
+  const reference = "Y".repeat(101);
+  const response = await request.post("/api/enquiries", {
+    data: {
+      product: "AUTOCALLABLE",
+      clientId: "client-demo",
+      operatorId: "staff-demo",
+      clientReference: reference,
+    },
+  });
+  expect(response.status()).toBe(400);
 });

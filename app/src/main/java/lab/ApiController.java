@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.*;
@@ -20,7 +21,7 @@ public class ApiController {
         this.catalog = catalog;
     }
 
-    public record CreateRequest(@NotBlank String product, @NotBlank String clientId, @NotBlank String operatorId) {
+    public record CreateRequest(@NotBlank String product, @NotBlank String clientId, @NotBlank String operatorId, @Size(max = 100) @Nullable String clientReference) {
     }
 
     public record RfqRequest(Map<String, String> scenarios, Integer deadlineMillis) {

@@ -14,6 +14,8 @@ Open [the workspace](http://localhost:4200/workspace). All language runtimes and
 
 Keep the enquiry and trade IDs displayed by the UI. PostgreSQL retains records after `just down`. **New enquiry** changes the current workspace without deleting server records. Reload restores this browser's last IDs. To reopen another record, paste its UUID and choose **Open enquiry** or **Open trade**. Reopen by trade ID for lifecycle management.
 
+When creating either product's enquiry, you can enter an optional **Client Reference**, such as `ORDER-1042`, using up to 100 characters. The saved value appears under **Client Reference** in the **Enquiry workspace** details and remains available after reloading or reopening the record. Leaving the input blank displays **Not provided**. Reopening records continues to use the enquiry or trade UUID.
+
 `just reset` deliberately deletes the application's synthetic database. It is not needed to start another enquiry.
 
 ## Autocallable note

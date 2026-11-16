@@ -36,6 +36,10 @@ import { Product, productName } from "../models";
               <dd>{{ enquiry.clientId }} / {{ enquiry.operatorId }}</dd>
             </div>
             <div>
+              <dt>Client Reference</dt>
+              <dd>{{ enquiry.clientReference ?? "Not provided" }}</dd>
+            </div>
+            <div>
               <dt>Currency / underlying</dt>
               <dd>
                 {{ enquiry.terms.currency }} / {{ enquiry.terms.underlying }}
@@ -150,6 +154,12 @@ import { Product, productName } from "../models";
               ><label
                 >Staff ID<input formControlName="operatorId" autocomplete="off"
               /></label>
+              <label
+                >Client Reference (Optional)<input
+                  formControlName="clientReference"
+                  maxlength="100"
+                  autocomplete="off"
+              /></label>
             </div>
             <p class="field-hint">
               The demonstration is approved only for client-demo and staff-demo.
@@ -242,6 +252,7 @@ export class EnquiryPage {
   readonly form = this.fb.nonNullable.group({
     product: ["AUTOCALLABLE" as Product, Validators.required],
     clientId: ["client-demo", Validators.required],
+    clientReference: ["", Validators.maxLength(100)],
     operatorId: ["staff-demo", Validators.required],
   });
   readonly openForm = this.fb.nonNullable.group({
@@ -259,7 +270,7 @@ export class EnquiryPage {
     if (this.form.invalid) return;
     const value = this.form.getRawValue();
     if (
-      await this.store.create(value.product, value.clientId, value.operatorId)
+      await this.store.create(value.product, value.clientId, value.operatorId, value.clientReference || null)
     )
       await this.router.navigateByUrl("/offers");
   }

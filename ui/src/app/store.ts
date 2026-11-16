@@ -114,10 +114,10 @@ export class Workspace {
     this.persist();
   }
 
-  create(product: Product, client: string, operator: string): Promise<boolean> {
+  create(product: Product, client: string, operator: string, clientReference: string | null = null): Promise<boolean> {
     if (this.pending()) return this.preventSwitch();
     return this.run("Creating enquiry", async () => {
-      const enquiry = await this.api.create(product, client, operator);
+      const enquiry = await this.api.create(product, client, operator, clientReference);
       this.pending.set(null);
       this.trade.set(null);
       await this.load(enquiry.id);

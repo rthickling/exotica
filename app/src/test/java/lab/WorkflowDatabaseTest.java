@@ -1,22 +1,39 @@
 package lab;
 
-import com.fasterxml.jackson.databind.*;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.lang.NonNull;
-import java.sql.*;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Actual PostgreSQL integration tests. Pricing is a declared stub here;
@@ -45,7 +62,7 @@ class WorkflowDatabaseTest {
     @NonNull
     UUID create(String product) {
         return Objects.requireNonNull(
-                (UUID) workflow.create(new ApiController.CreateRequest(product, "client-demo", "staff-demo")).get("id"));
+                (UUID) workflow.create(new ApiController.CreateRequest(product, "client-demo", "staff-demo", null)).get("id"));
     }
 
     @SuppressWarnings("unchecked")
@@ -64,7 +81,7 @@ class WorkflowDatabaseTest {
     @Test
     void rejectsInvalidFixtureAndIndicativeAcceptance() {
         assertEquals("FIXTURE_NOT_ELIGIBLE", assertThrows(BusinessException.class,
-                () -> workflow.create(new ApiController.CreateRequest("AUTOCALLABLE", "wrong", "staff-demo"))).code);
+                () -> workflow.create(new ApiController.CreateRequest("AUTOCALLABLE", "wrong", "staff-demo", null))).code);
         UUID id = create("AUTOCALLABLE");
         UUID offerId = Objects.requireNonNull((UUID) rfq(id, Map.of()).getFirst().get("id"));
         var error = assertThrows(BusinessException.class,
@@ -199,5 +216,23 @@ class WorkflowDatabaseTest {
         workflow.advance(tradeId, LocalDate.of(2026, 12, 18), true);
         assertEquals("SIMULATED_SETTLED",
                 jdbc.queryForObject("select state from obligation where trade_id=?", String.class, tradeId));
+    }
+
+    @Test
+    void persistsClientReference() {
+        var result = workflow.create(new ApiController.CreateRequest("AUTOCALLABLE", "client-demo", "staff-demo", "ORDER-1042"));
+        assertEquals("ORDER-1042", result.get("clientReference"));
+        UUID id = (UUID) result.get("id");
+        var enquiry = workflow.getEnquiry(id);
+        assertEquals("ORDER-1042", enquiry.get("clientReference"));
+        assertEquals("ORDER-1042", jdbc.queryForObject("select client_reference from enquiry where id=?", String.class, id));
+    }
+
+    @Test
+    void allowsMissingClientReference() {
+        UUID id = create("AUTOCALLABLE");
+        var enquiry = workflow.getEnquiry(id);
+        assertTrue(enquiry.containsKey("clientReference"));
+        assertNull(enquiry.get("clientReference"));
     }
 }

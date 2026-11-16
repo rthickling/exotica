@@ -37,12 +37,11 @@ public class WorkflowService {
     private final boolean faultInjection;
     private final ExecutorService issuerExecutor = Executors.newFixedThreadPool(3);
 
-    WorkflowService(EnquiryRepository enquiries, TermRepository terms, OfferRepository offers,
-            TradeRepository trades, AuditRepository audits, OutboxRepository outbox,
-            ObligationRepository obligations, ValuationRepository valuations,
-            LifecycleFixingRepository lifecycleFixings,
-            ProductCatalog catalog, IssuerGateway issuerGateway, PricingGateway pricer,
-            JsonSupport json, Clock clock, @Value("${lab.fault-injection}") boolean faultInjection) {
+    WorkflowService(EnquiryRepository enquiries, TermRepository terms, OfferRepository offers, TradeRepository trades,
+            AuditRepository audits, OutboxRepository outbox, ObligationRepository obligations,
+            ValuationRepository valuations, LifecycleFixingRepository lifecycleFixings, ProductCatalog catalog,
+            IssuerGateway issuerGateway, PricingGateway pricer, JsonSupport json, Clock clock,
+            @Value("${lab.fault-injection}") boolean faultInjection) {
         this.enquiries = enquiries;
         this.terms = terms;
         this.offers = offers;
@@ -80,6 +79,7 @@ public class WorkflowService {
         e.termsHash = JsonSupport.hash(e.termsJson);
         e.state = "ENQUIRY";
         e.clientId = request.clientId();
+        e.clientReference = request.clientReference();
         e.operatorId = request.operatorId();
         e.eligibility = "SYNTHETIC_HK_CLIENT_AND_PRODUCT_APPROVED";
         e.createdAt = clock.instant();
@@ -162,12 +162,10 @@ public class WorkflowService {
         UUID requestId = UUID.randomUUID();
         Instant now = clock.instant();
         List<String> issuers = List.of("Issuer-A", "Issuer-B", "Issuer-C");
-        List<Callable<IssuerGateway.Quote>> tasks = issuers
-                .stream().<Callable<IssuerGateway.Quote>>map(issuer -> () -> issuerGateway.quote(
-                        new IssuerGateway.QuoteRequest(requestId, issuer, e.product, e.termsVersion, e.termsHash,
-                                e.termsJson,
-                                json.read(e.termsJson).path("currency").asText(), size(e),
-                                scenarios.getOrDefault(issuer, "OK"), now)))
+        List<Callable<IssuerGateway.Quote>> tasks = issuers.stream().<Callable<IssuerGateway.Quote>>map(
+                issuer -> () -> issuerGateway.quote(new IssuerGateway.QuoteRequest(requestId, issuer, e.product,
+                        e.termsVersion, e.termsHash, e.termsJson, json.read(e.termsJson).path("currency").asText(),
+                        size(e), scenarios.getOrDefault(issuer, "OK"), now)))
                 .toList();
         List<Offer> result = new ArrayList<>();
         try {
@@ -229,9 +227,9 @@ public class WorkflowService {
         Offer o = copyOffer(e, best, "INDICATIVE");
         o.issuer = "Barclays-simulated";
         BigDecimal adjustment = switch (outcome) {
-            case "IMPROVED" -> new BigDecimal("-10");
-            case "UNIMPROVED" -> new BigDecimal("10");
-            default -> BigDecimal.ZERO;
+        case "IMPROVED" -> new BigDecimal("-10");
+        case "UNIMPROVED" -> new BigDecimal("10");
+        default -> BigDecimal.ZERO;
         };
         o.fee = best.fee.add(adjustment);
         o.status = outcome.equals("DECLINED") ? "DECLINED" : "AVAILABLE";
@@ -572,8 +570,8 @@ public class WorkflowService {
     private Map<String, Object> enquiryDto(Enquiry e) {
         return fields("id", e.id, "version", e.version, "product", e.product, "termsVersion", e.termsVersion, "terms",
                 json.read(e.termsJson), "termsHash", e.termsHash, "state", e.state, "clientId", e.clientId,
-                "operatorId", e.operatorId, "eligibility", e.eligibility, "selectedOfferId", e.selectedOfferId,
-                "selectionRationale", e.selectionRationale, "instruction",
+                "clientReference", e.clientReference, "operatorId", e.operatorId, "eligibility", e.eligibility,
+                "selectedOfferId", e.selectedOfferId, "selectionRationale", e.selectionRationale, "instruction",
                 e.instructionJson == null ? null : json.read(e.instructionJson), "createdAt", e.createdAt);
     }
 
