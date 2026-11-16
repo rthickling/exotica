@@ -36,7 +36,7 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".",
+          "beginsPattern": "(?!)",
           "endsPattern": "Local:\\s+http://127\\.0\\.0\\.1:4200/"
         }
       },
