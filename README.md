@@ -1,6 +1,8 @@
 # exotica
 Demonstration Exotic and Structured Product Sales and Management System
 
+![Exotica sales workspace showing product selection and the enquiry form](docs/images/exotica.png)
+
 An Angular 21 sales workspace backed by a small Java 21/Spring application, PostgreSQL and an independent Python/QuantLib pricer. It covers two frozen synthetic contracts: a funded up-trigger autocallable note and a physical equity accumulator. Staff can request and compare indicative offers, record simulated authority, obtain a distinct firm offer, book once, value the contract and replay dated obligations.
 
 All clients, staff permissions, issuer offers, commercial matching, execution and settlement are **simulated**. The model calculation and the Java–Python HTTP and PostgreSQL boundaries are real. The system requires no institutional credentials. A committed outbox is retained; Kafka/Avro delivery, live connectivity and production identity/issuance/confirmation/custody systems are deferred.
