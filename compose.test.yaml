@@ -13,6 +13,16 @@ services:
       retries: 30
     volumes:
       - test-data:/var/lib/postgresql/data
+  # Cucumber KOELN steps call /replay over HTTP (same boundary as WorkflowService).
+  pricer:
+    build:
+      context: .
+      dockerfile: pricer/Dockerfile
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
   gradle:
     profiles: [tools]
     build:
@@ -26,8 +36,11 @@ services:
       TEST_DB_URL: jdbc:postgresql://db:5432/lab
       TEST_DB_USER: lab
       TEST_DB_PASSWORD: lab-local-only
+      PRICER_URL: http://pricer:8090
     depends_on:
       db:
+        condition: service_healthy
+      pricer:
         condition: service_healthy
 volumes:
   test-data:
