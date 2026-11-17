@@ -222,7 +222,7 @@ class WorkflowDatabaseTest {
     void persistsClientReference() {
         var result = workflow.create(new ApiController.CreateRequest("AUTOCALLABLE", "client-demo", "staff-demo", "ORDER-1042"));
         assertEquals("ORDER-1042", result.get("clientReference"));
-        UUID id = (UUID) result.get("id");
+        UUID id = Objects.requireNonNull((UUID) result.get("id"));
         var enquiry = workflow.getEnquiry(id);
         assertEquals("ORDER-1042", enquiry.get("clientReference"));
         assertEquals("ORDER-1042", jdbc.queryForObject("select client_reference from enquiry where id=?", String.class, id));
